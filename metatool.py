@@ -29,8 +29,7 @@ def create_changelog(args) -> str:
 
     begin = run(["git", "-C", native_plugins_root, "ls-tree", begin, python_plugins_root], capture_output=True).stdout.decode().strip().split()[2]
     log = run(["git", "-C", python_plugins_root, "log", "--pretty=format:* %B", f"{begin}..HEAD"], capture_output=True).stdout.decode().strip()
-    log = re.sub('\n+', '\n', log)
-    if log:
+    if log := re.sub('\n+', '\n', log):
         out.append(f"[python]\n{log}")
 
     return '\n\n'.join(out)
@@ -41,7 +40,7 @@ def test_build(args):
     for i, f in enumerate(files):
         print(f"{i}: {f.name}")
 
-    indices = input(f"Which to build? [All] ")
+    indices = input("Which to build? [All] ")
     indices = [int(s) for s in filter(None, indices.split())]
     indices = indices if indices else list(range(len(files)))
     for index in indices:
@@ -57,7 +56,12 @@ def release(args):
     root = Path(args.root)
 
 
-    if "master" != run(["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True).stdout.decode().strip():
+    if (
+        run(["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True)
+        .stdout.decode()
+        .strip()
+        != "master"
+    ):
         print("Not on master branch")
         sys.exit(1)
 
@@ -88,7 +92,10 @@ def release(args):
     input("Edit the changelog created from git logs to be meaningful to humans. Press Enter to continue...")
     run(["vim", atomic_changelog]).check_returncode()
 
-    if 'yes' == input("Release? (CHANGELOG, VERSION, tagged push)? [yes/NO]").lower():
+    if (
+        input("Release? (CHANGELOG, VERSION, tagged push)? [yes/NO]").lower()
+        == 'yes'
+    ):
         print("Appending changelog…")
 
         with open(atomic_changelog, 'r') as file:
